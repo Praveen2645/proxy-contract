@@ -22,8 +22,6 @@ contract StakingV2 is Initializable,OwnableUpgradeable,PausableUpgradeable,Reent
         uint256 deadline;
     }
 
-  
-        
     
 
     mapping(address => mapping(uint256 => User)) public userMonthToAmount;
