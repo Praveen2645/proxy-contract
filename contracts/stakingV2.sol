@@ -1,36 +1,41 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+// import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
+// import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+// import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
+// import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {SafeMathUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-//import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-
 
 contract StakingV2 is Initializable,OwnableUpgradeable,PausableUpgradeable,ReentrancyGuardUpgradeable{
     using SafeMathUpgradeable for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 public minStakeAmount ;
-    uint256 public maxStakeAmount ;
-
+    uint256 public minStakeAmount; /*= 20 * 10**14;*/
+    uint256 public maxStakeAmount;/*= 200 * 10**14;*/
+    uint public hello;
+    //address public owner;
     struct User {
         uint256 amount;
         uint256 deadline;
     }
 
-    
-
-    mapping(address => mapping(uint256 => User)) public userMonthToAmount;
-    mapping(uint256 => uint256) public monthToInterestRate;
-
-    IERC20 public token;
-
+    // constructor() {
+    //     monthToInterestRate[3] = 22;
+    //     monthToInterestRate[6] = 45;
+    //     monthToInterestRate[12] = 100;
+    //     owner = msg.sender;
+    // }
     function initialize() public initializer {
         __Ownable_init();
+        //owner = msg.sender;
         monthToInterestRate[3] = 22;
         monthToInterestRate[6] = 45;
         monthToInterestRate[12] = 100;
@@ -38,6 +43,16 @@ contract StakingV2 is Initializable,OwnableUpgradeable,PausableUpgradeable,Reent
         maxStakeAmount = 200 * 10**14;
 
     }
+
+    // modifier onlyOwner(){
+    //     require(msg.sender == owner, "only admins are allowed");
+    //     _;
+    // }
+
+    mapping(address => mapping(uint256 => User)) public userMonthToAmount;
+    mapping(uint256 => uint256) public monthToInterestRate;
+
+    IERC20 public token;
 
     function setAddress(address _address) external onlyOwner {
         token = IERC20(_address);
@@ -56,10 +71,10 @@ contract StakingV2 is Initializable,OwnableUpgradeable,PausableUpgradeable,Reent
         User storage user = userMonthToAmount[msg.sender][_month];
         require(user.amount == 0, "already staked");
 
+        token.safeTransferFrom(msg.sender, address(this), _amount);
         user.amount = _amount;
         user.deadline = block.timestamp.add(_month * 60); /* CHANGE THE TIME BEFORE DEPLOY */
 
-        token.safeTransferFrom(msg.sender, address(this), _amount);
     }
 
     function unstake(uint256 _month) external nonReentrant {
@@ -106,12 +121,16 @@ contract StakingV2 is Initializable,OwnableUpgradeable,PausableUpgradeable,Reent
     {
         monthToInterestRate[_month] = _interestRate;
     }
-    
-        function pause() public onlyOwner {
+
+    function pause() public onlyOwner {
         _pause();
     }
 
-    function unpause() public onlyOwner{
+    function unpause() public onlyOwner {
         _unpause();
     }
+
+    // function transferOwnership(address _address) external onlyOwner{
+    //     owner = _address;
+    // }
 }
